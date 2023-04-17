@@ -11,7 +11,17 @@ import (
 )
 
 var tokensFileDir string
-var tokenMap = make(map[string]string)
+var tokenMap = make(map[string]userToken)
+
+type userToken struct {
+	key     string
+	mac     string
+	comment string
+}
+
+func (t userToken) ShowUrl(prefix string) {
+	fmt.Printf("http://%s/%s", prefix, t.key)
+}
 
 func main() {
 	util.CheckEnvFile()
@@ -25,8 +35,13 @@ func main() {
 	http.HandleFunc("/wakeup/", handlerWol)
 
 	addr := fmt.Sprintf("%s:%s", host, port)
-	fmt.Printf("Listen %s", addr)
+	fmt.Printf("Listen %s\n", addr)
+	ip := util.GetOutboundIP().String()
+	for _, token := range tokenMap {
+		fmt.Printf("http://%s:%s/wakeup/%s - %s : %s\n", ip, port, token.key, token.mac, token.comment)
+	}
 	err := http.ListenAndServe(fmt.Sprintf("%s:%s", host, port), nil)
+
 	util.PanicIfErr(err)
 }
 
@@ -39,7 +54,7 @@ func handlerWol(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := util.SendMagicPacket(s)
+	err := util.SendMagicPacket(s.mac)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -60,8 +75,14 @@ func initTokenMap() {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		args := strings.Split(scanner.Text(), " ")
+		token := userToken{}
 		if len(args) > 1 {
-			tokenMap[args[0]] = args[1]
+			token.key = args[0]
+			token.mac = args[1]
+			if len(args) > 2 {
+				token.comment = strings.Join(args[2:], " ")
+			}
+			tokenMap[args[0]] = token
 		}
 	}
 	if err := scanner.Err(); err != nil {
