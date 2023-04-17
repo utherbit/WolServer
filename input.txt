@@ -1,1 +1,3 @@
+<wake-up-key> <mac-address> // comment
 2b55d960-ba53-415c-ab25-fa197ba3977a A0-B1-C2-D3-E4-F5 // utherbit pc
+8a96f8ec-be9c-4e55-98ed-699f64a0d8e9 B2-A3-E5-F8-A0-C1 // example user2 
